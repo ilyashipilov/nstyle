@@ -7,6 +7,5 @@
 - качество jpeg отправляемого изображения.
 
 Тестировал на Lenovo A1000 - Android версии 5 - работает. 
-В эмуляторе на Android 6 перестал запускаться из-за прав после добавления кода для работы с ExternalStorage (я так понял, в этой версии некая новая модель назначения прав по требованию, не стал разбираться).
 
 Для предотвращения использования сервера посторонними приложениями необходимо обфуцировать класс, отвечающий за расчет хэша запроса - [shipilov.name.nstyle.HashCalculator](https://github.com/ilyashipilov/nstyle/blob/master/NStylePrototype/src/main/java/shipilov/name/nstyle/HashCalculator.java)
