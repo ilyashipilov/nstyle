@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import shipilov.name.nstyle.api.AdminApi;
 import shipilov.name.nstyle.api.ServerApi;
 
 /**
@@ -17,6 +18,7 @@ import shipilov.name.nstyle.api.ServerApi;
 public class NstyleApplication extends Application {
 
     private static ServerApi serverApi;
+    private static AdminApi adminApi;
     private Retrofit retrofit;
     private static Properties properties;
 
@@ -36,10 +38,15 @@ public class NstyleApplication extends Application {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         serverApi = retrofit.create(ServerApi.class);
+        adminApi = retrofit.create(AdminApi.class);
     }
 
     public static ServerApi getApi() {
         return serverApi;
+    }
+
+    public static AdminApi getAdminApi() {
+        return adminApi;
     }
 
     public static Properties getProperties() {

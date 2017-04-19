@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/styleName"
+        android:layout_width="347dp"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Style name"
+        android:layout_centerVertical="true"
+        android:layout_alignLeft="@+id/styleImage"
+        android:layout_alignStart="@+id/styleImage"
+        android:layout_margin="10dp"
+        android:inputType="text"
+        android:maxLines="1"
+        android:lines="1"/>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp">
+            <TextView
+                android:text="Style"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/textView3"/>
+            <ImageView
+                android:id="@+id/styleImage"
+                android:background="#efefef"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_marginTop="18dp"
+                android:cropToPadding="false"
+                android:scaleType="centerCrop"
+                app:srcCompat="@android:drawable/ic_menu_gallery" />
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dp">
+            <TextView
+                android:text="Sample"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/textView2" />
+
+            <ImageView
+                android:id="@+id/sampleImage"
+                android:background="#efefef"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_marginTop="18dp"
+                android:cropToPadding="false"
+                android:scaleType="centerCrop"
+                app:srcCompat="@android:drawable/ic_menu_gallery" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:gravity="right">
+
+            <TextView
+                android:text="Itearations"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/textView" />
+
+            <NumberPicker
+                android:layout_width="wrap_content"
+                android:id="@+id/iterationsPicker"
+                android:layout_marginTop="18dp"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:text="Start training"
+            android:id="@+id/startButton"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.27"
+            android:layout_width="100dp"
+            android:layout_marginLeft="60dp"
+            android:layout_marginRight="60dp"
+            android:enabled="false" />
+    </LinearLayout>
+
+
+</LinearLayout>
