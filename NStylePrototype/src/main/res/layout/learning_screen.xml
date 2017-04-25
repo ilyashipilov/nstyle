@@ -51,6 +51,7 @@
         android:id="@+id/cancel_button"
         android:layout_weight="0.01"
         android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:enabled="false" />
 
 </RelativeLayout>

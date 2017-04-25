@@ -1,6 +1,11 @@
 package shipilov.name.nstyle;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.storage.StorageManager;
+import android.os.storage.StorageVolume;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +24,8 @@ public class NstyleApplication extends Application {
 
     private static ServerApi serverApi;
     private static AdminApi adminApi;
-    private Retrofit retrofit;
+    private static Retrofit retrofit;
+    private static Retrofit adminRetrofit;
     private static Properties properties;
 
     @Override
@@ -33,12 +39,19 @@ public class NstyleApplication extends Application {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public static void initializeApi(String ip, String adminIp) {
         retrofit = new Retrofit.Builder()
-                .baseUrl(getProperties().getProperty("serverUrl"))
+                .baseUrl("http://" + ip + ":8080/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        adminRetrofit = new Retrofit.Builder()
+                .baseUrl("http://" + adminIp + ":8080/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         serverApi = retrofit.create(ServerApi.class);
-        adminApi = retrofit.create(AdminApi.class);
+        adminApi = adminRetrofit.create(AdminApi.class);
     }
 
     public static ServerApi getApi() {

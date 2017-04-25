@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements StyleSelectFragme
         //load settings
         if (settings == null) {
             lockScreen();
+            /*
             NstyleApplication.getApi().getSettings(new HashMap<String, String>()).enqueue(new Callback<Settings>() {
                 @Override
                 public void onResponse(Call<Settings> call, Response<Settings> response) {
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements StyleSelectFragme
                     showDialog("Initialization error", t.getMessage());
                 }
             });
+            */
         }
 
     }

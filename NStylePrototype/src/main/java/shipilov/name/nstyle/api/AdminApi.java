@@ -20,7 +20,7 @@ import retrofit2.http.Streaming;
 public interface AdminApi {
 
     @GET("/admin/learningData")
-    Map<String, List<String>> learningData();
+    Call<Map<String, List<String>>> learningData();
 
     @Multipart
     @POST("/admin/startLearning")
@@ -31,4 +31,7 @@ public interface AdminApi {
 
     @GET("/admin/status")
     Call<LearningStatusInfo> status();
+
+    @POST("/admin/removeResult")
+    Call<Void> removeResult(@Query("styleId") String styleId);
 }

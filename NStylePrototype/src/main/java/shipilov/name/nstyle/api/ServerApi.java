@@ -65,4 +65,33 @@ public interface ServerApi {
     @GET("/result")
     @Streaming
     Call<ResponseBody> result(@Query("resultId") String resultId);
+
+    /**
+     * Установка нового стиля. Только для администратора.
+     * TODO: секьюрность
+     *
+     * @param styleId
+     * @param styleName
+     * @param styleIcon иконка стиля
+     * @param networkFileUrl url файла с обученной сетью
+     * @return
+     */
+    @POST("/placeStyle")
+    Call<ResponseBody> placeStyle(
+            @Query("styleId") String styleId,
+            @Query("styleName") String styleName,
+            @Part("styleIcon") MultipartBody.Part styleIcon,
+            @Query("networkFileUrl") String networkFileUrl);
+
+    /**
+     * Удаление стиля. Только для администратора.
+     * TODO: секьюрность
+     *
+     * @param styleId
+     * @return
+     */
+    @POST("/removeStyle")
+    Call<ResponseBody> removeStyle(
+            @Query("styleId") String styleId);
+
 }
