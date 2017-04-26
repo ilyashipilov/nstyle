@@ -60,12 +60,13 @@ import static android.R.attr.data;
  * Created by HOME on 17.04.2017.
  */
 
-public class AdminActivity extends AppCompatActivity implements StartLearningFragment.OnStartLearning, ServerIpFragment.OnConnectListener, TrainingDataFragment.DataProvider, TrainingDataFragment.Listener {
+public class AdminActivity extends AppCompatActivity implements StartLearningFragment.OnStartLearning, ServerIpFragment.OnConnectListener, TrainingDataFragment.DataProvider, TrainingDataFragment.Listener, MenuFragment.Listener {
 
     private LearningScreenFragment learningScreen;
     private StartLearningFragment startLearning;
     private ServerIpFragment serverIpFragment;
     private TrainingDataFragment trainingDataFragment;
+    private MenuFragment menuFragment;
 
     private Timer statusTimer;
 
@@ -92,21 +93,20 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         startLearning = new StartLearningFragment();
         serverIpFragment = new ServerIpFragment();
         trainingDataFragment = new TrainingDataFragment();
+        menuFragment = new MenuFragment();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissionsOnStorage();
         }
 
-
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
         if (learningStatusInfo == null) {
-            FragmentManager fragmentManager = getSupportFragmentManager();
-            FragmentTransaction ft = fragmentManager.beginTransaction();
             ft.add(R.id.main_ui_container, serverIpFragment, "serverIpFragment");
-            ft.commit();
         } else {
-            go();
+            ft.replace(R.id.main_ui_container, menuFragment, "menuFragment").addToBackStack(null);
         }
-
+        ft.commit();
     }
 
     private void go() {
@@ -119,12 +119,9 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
                 if (learningStatusInfo.getStatus() == LearningStatusInfo.Status.WAIT
                         || learningStatusInfo.getStatus() == LearningStatusInfo.Status.COMPLETED
                         || learningStatusInfo.getStatus() == LearningStatusInfo.Status.ERROR) {
-                    //ft.replace(R.id.main_ui_container, startLearning, "startLearning");
-                    refreshStyles();
-
-                    ft.replace(R.id.main_ui_container, trainingDataFragment, "trainingDataFragment");
+                    ft.replace(R.id.main_ui_container, startLearning, "startLearning").addToBackStack(null);;
                 } else {
-                    ft.replace(R.id.main_ui_container, learningScreen, "learningScreen");
+                    ft.replace(R.id.main_ui_container, learningScreen, "learningScreen").addToBackStack(null);;
                     startStatusTask();
                 }
                 ft.commit();
@@ -136,6 +133,21 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
                 showDialog("Initialization error", t.getMessage());
             }
         });
+    }
+
+
+    @Override
+    public void onTraining() {
+        go();
+    }
+
+    @Override
+    public void onPublishing() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        refreshStyles();
+        ft.replace(R.id.main_ui_container, trainingDataFragment, "trainingDataFragment").addToBackStack(null);
+        ft.commit();
     }
 
     final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
@@ -188,7 +200,10 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     @Override
     public void onConnect(String ip, String adminIp) {
         NstyleApplication.initializeApi(ip, adminIp);
-        go();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.replace(R.id.main_ui_container, menuFragment, "menuFragment").addToBackStack(null);
+        ft.commit();
     }
 
     //запрос данных от админки и с процессингового сервера
