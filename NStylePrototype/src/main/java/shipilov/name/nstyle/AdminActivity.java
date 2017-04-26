@@ -1,22 +1,41 @@
 package shipilov.name.nstyle;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 
+import com.soundcloud.android.crop.Crop;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,7 +51,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import shipilov.name.nstyle.api.LearningStatusInfo;
+import shipilov.name.nstyle.api.ProcessingResult;
 import shipilov.name.nstyle.api.Settings;
+
+import static android.R.attr.data;
 
 /**
  * Created by HOME on 17.04.2017.
@@ -50,6 +72,8 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     private LearningStatusInfo learningStatusInfo;
     private List<String> styles;
     private List<String> publicStyles;
+
+    private File outputFile;
 
     private void showDialog(String title, String message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -204,23 +228,23 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     }
 
     @Override
-    public void onPublicChange(String styleId) {
+    public void onPublicChange(final String styleId) {
 
         if (publicStyles.contains(styleId)) {
             NstyleApplication.getApi().removeStyle(styleId).enqueue(new Callback<ResponseBody>() {
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                     refreshStyles();
+                    showDialog("Unpublished success", "Style \"" + styleId + "\" successful unpublished");
                 }
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    showDialog("Unpublic error", t.getMessage());
+                    showDialog("Unpublishing error", t.getMessage());
                 }
             });
         } else {
-            //TODO: открыть контрол для кадрирования картинки стиля
-            //after NstyleApplication.getApi().placeStyle(styleId, styleId, <icon>, <http://../styleId.t7>);
+            new LoadImageTask().execute(styleImageAddress(styleId), styleId);
         }
     }
 
@@ -236,7 +260,7 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    showDialog("Unpublic error", t.getMessage());
+                    showDialog("Unpublishing error", t.getMessage());
                 }
             });
         } else {
@@ -301,6 +325,89 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         }
     }
 
+    public class LoadImageTask extends AsyncTask<String, Void, String> {
+
+        @Override
+        protected String doInBackground(String... args) {
+            try {
+                return MediaStore.Images.Media.insertImage(getContentResolver(),
+                        BitmapFactory.decodeStream((InputStream) new URL(args[0]).getContent()),
+                        "NStyle_" + new Date().getTime(), "description");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String filePath) {
+
+            try {
+                outputFile = File.createTempFile("cropped", "jpg", AdminActivity.this.getCacheDir());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Crop.of(Uri.parse(filePath), Uri.fromFile(outputFile)).asSquare().start(AdminActivity.this);
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == Crop.REQUEST_CROP && resultCode == Activity.RESULT_OK) {
+
+
+            Bitmap photo = null;
+            try {
+                photo = BitmapFactory.decodeStream(new FileInputStream(outputFile));
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+
+            photo = getResizedBitmap(photo, 120, 120);
+
+                try {
+                    File tmpFile = File.createTempFile("cropped_resized", "jpg", AdminActivity.this.getCacheDir());
+                    FileOutputStream tmpStream = new FileOutputStream(tmpFile);
+
+                    photo.compress(Bitmap.CompressFormat.PNG, 100, tmpStream);
+                    tmpStream.close();
+
+                    final String styleId = trainingDataFragment.getCurrntStyleId();
+                    RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), tmpFile);
+                    MultipartBody.Part body = MultipartBody.Part.createFormData("styleIcon", tmpFile.getName(), requestFile);
+
+                    NstyleApplication.getApi().placeStyle(body, styleId, styleId, networkUrlAddress(styleId)).enqueue(new Callback<ProcessingResult>() {
+                        @Override
+                        public void onResponse(Call<ProcessingResult> call, Response<ProcessingResult> response) {
+                            if (response.body().isSuccess()) {
+                                showDialog("Success", "Style \"" + styleId + "\" published");
+                                refreshStyles();
+                            }
+                            else
+                                showDialog("Error", "Publish \"" + styleId + "\" error: " + response.body().getError());
+                        }
+
+                        @Override
+                        public void onFailure(Call<ProcessingResult> call, Throwable t) {
+                            showDialog("Error", "Publish \"" + styleId + "\" error: " + t.getMessage());
+                        }
+                    });
+
+
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+
+        }
+    }
+
+
+
+
     public byte[] readBytes(InputStream inputStream) {
         // this dynamically extends to take the bytes you read
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
@@ -321,5 +428,32 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
 
         // and then we can return your byte array.
         return byteBuffer.toByteArray();
+    }
+
+    private String styleImageAddress(String styleId) {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        return "http://" + sharedPref.getString("adminIp", null) + ":8080/images/" + styleId + "/styleImage.jpg";
+    }
+
+    private String networkUrlAddress(String styleId) {
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        return "http://" + sharedPref.getString("adminIp", null) + ":8080/styleT7place/" + styleId + ".t7";
+    }
+
+    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                bm, 0, 0, width, height, matrix, false);
+        bm.recycle();
+        return resizedBitmap;
     }
 }

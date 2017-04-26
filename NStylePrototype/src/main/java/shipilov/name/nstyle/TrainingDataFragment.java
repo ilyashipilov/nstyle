@@ -42,6 +42,10 @@ public class TrainingDataFragment extends Fragment {
         boolean isPublic(String styleId);
     }
 
+    public String getCurrntStyleId() {
+        return ((DataProvider)getActivity()).getStyles().get(pager.getCurrentItem());
+    }
+
     public void refreshPageView(int position) {
         pagerAdapter.notifyChangeInPosition(position);
         pagerAdapter.notifyDataSetChanged();
@@ -66,6 +70,7 @@ public class TrainingDataFragment extends Fragment {
         });
 
         publicSwitch = (Switch) rootView.findViewById(R.id.switchPublic);
+        publicSwitch.setChecked(((DataProvider)getActivity()).isPublic(getCurrntStyleId()));
         final CompoundButton.OnCheckedChangeListener switchListener = new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 ((Listener) getActivity()).onPublicChange(getStyles().get(pager.getCurrentItem()));

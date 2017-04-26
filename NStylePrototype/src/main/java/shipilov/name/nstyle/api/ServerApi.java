@@ -76,11 +76,12 @@ public interface ServerApi {
      * @param networkFileUrl url файла с обученной сетью
      * @return
      */
+    @Multipart
     @POST("/placeStyle")
-    Call<ResponseBody> placeStyle(
+    Call<ProcessingResult> placeStyle(
+            @Part MultipartBody.Part styleIcon,
             @Query("styleId") String styleId,
             @Query("styleName") String styleName,
-            @Part("styleIcon") MultipartBody.Part styleIcon,
             @Query("networkFileUrl") String networkFileUrl);
 
     /**
