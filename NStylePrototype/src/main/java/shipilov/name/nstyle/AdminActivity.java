@@ -1,5 +1,13 @@
 package shipilov.name.nstyle;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -10,7 +18,9 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -23,6 +33,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.soundcloud.android.crop.Crop;
 
@@ -74,6 +85,8 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     private List<String> styles;
     private List<String> publicStyles;
 
+    private Mat mat;
+
     private File outputFile;
 
     private void showDialog(String title, String message) {
@@ -81,6 +94,32 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         builder.setMessage(message).setTitle(title);
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                {
+                    mat=new Mat();
+                } break;
+                default:
+                {
+                    super.onManagerConnected(status);
+                } break;
+            }
+        }
+    };
+
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+        if (!OpenCVLoader.initDebug()) {
+            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+        } else {
+            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
 
     @Override
@@ -380,41 +419,45 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
                 throw new RuntimeException(e);
             }
 
-            photo = getResizedBitmap(photo, 120, 120);
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
 
-                try {
-                    File tmpFile = File.createTempFile("cropped_resized", "jpg", AdminActivity.this.getCacheDir());
-                    FileOutputStream tmpStream = new FileOutputStream(tmpFile);
+            Mat src = Imgcodecs.imdecode(new MatOfByte(stream.toByteArray()), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+            Mat dst = new Mat();
+            Size size = new Size(125, 125); //client icons size
+            Imgproc.resize(src, dst, size, 0, 0, Imgproc.INTER_CUBIC);
 
-                    photo.compress(Bitmap.CompressFormat.PNG, 100, tmpStream);
-                    tmpStream.close();
+            try {
+                File tmpFile = File.createTempFile("cropped_resized", ".png", AdminActivity.this.getCacheDir());
 
-                    final String styleId = trainingDataFragment.getCurrntStyleId();
-                    RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), tmpFile);
-                    MultipartBody.Part body = MultipartBody.Part.createFormData("styleIcon", tmpFile.getName(), requestFile);
+                Imgcodecs.imwrite(tmpFile.getAbsolutePath(), dst);
 
-                    NstyleApplication.getApi().placeStyle(body, styleId, styleId, networkUrlAddress(styleId)).enqueue(new Callback<ProcessingResult>() {
-                        @Override
-                        public void onResponse(Call<ProcessingResult> call, Response<ProcessingResult> response) {
-                            if (response.body().isSuccess()) {
-                                showDialog("Success", "Style \"" + styleId + "\" published");
-                                refreshStyles();
-                            }
-                            else
-                                showDialog("Error", "Publish \"" + styleId + "\" error: " + response.body().getError());
+                final String styleId = trainingDataFragment.getCurrntStyleId();
+                RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), tmpFile);
+                MultipartBody.Part body = MultipartBody.Part.createFormData("styleIcon", tmpFile.getName(), requestFile);
+
+                NstyleApplication.getApi().placeStyle(body, styleId, styleId, networkUrlAddress(styleId)).enqueue(new Callback<ProcessingResult>() {
+                    @Override
+                    public void onResponse(Call<ProcessingResult> call, Response<ProcessingResult> response) {
+                        if (response.body().isSuccess()) {
+                            showDialog("Success", "Style \"" + styleId + "\" published");
+                            refreshStyles();
                         }
+                        else
+                            showDialog("Error", "Publish \"" + styleId + "\" error: " + response.body().getError());
+                    }
 
-                        @Override
-                        public void onFailure(Call<ProcessingResult> call, Throwable t) {
-                            showDialog("Error", "Publish \"" + styleId + "\" error: " + t.getMessage());
-                        }
-                    });
+                    @Override
+                    public void onFailure(Call<ProcessingResult> call, Throwable t) {
+                        showDialog("Error", "Publish \"" + styleId + "\" error: " + t.getMessage());
+                    }
+                });
 
 
 
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
 
         }
@@ -455,20 +498,22 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         return "http://" + sharedPref.getString("adminIp", null) + ":8080/styleT7place/" + styleId + ".t7";
     }
 
-    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        float scaleWidth = ((float) newWidth) / width;
-        float scaleHeight = ((float) newHeight) / height;
-        // CREATE A MATRIX FOR THE MANIPULATION
-        Matrix matrix = new Matrix();
-        // RESIZE THE BIT MAP
-        matrix.postScale(scaleWidth, scaleHeight);
+    public static Bitmap getResizedBitmap(Bitmap bitmap, int newWidth, int newHeight) {
+        Bitmap scaledBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
 
-        // "RECREATE" THE NEW BITMAP
-        Bitmap resizedBitmap = Bitmap.createBitmap(
-                bm, 0, 0, width, height, matrix, false);
-        bm.recycle();
-        return resizedBitmap;
+        float scaleX = newWidth / (float) bitmap.getWidth();
+        float scaleY = newHeight / (float) bitmap.getHeight();
+        float pivotX = 0;
+        float pivotY = 0;
+
+        Matrix scaleMatrix = new Matrix();
+        scaleMatrix.setScale(scaleX, scaleY, pivotX, pivotY);
+
+        Canvas canvas = new Canvas(scaledBitmap);
+        canvas.setMatrix(scaleMatrix);
+        canvas.drawBitmap(bitmap, 0, 0, new Paint(Paint.FILTER_BITMAP_FLAG));
+
+        return scaledBitmap;
     }
+
 }
