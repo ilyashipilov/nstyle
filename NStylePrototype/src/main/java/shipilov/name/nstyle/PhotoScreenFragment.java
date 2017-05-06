@@ -85,7 +85,6 @@ public class PhotoScreenFragment extends Fragment {
             }
         }
     }
-
     private Bitmap resize(Bitmap source, int maxSize) {
         int outWidth;
         int outHeight;
@@ -101,5 +100,6 @@ public class PhotoScreenFragment extends Fragment {
 
         return Bitmap.createScaledBitmap(source, outWidth, outHeight, false);
     }
+
 
 }

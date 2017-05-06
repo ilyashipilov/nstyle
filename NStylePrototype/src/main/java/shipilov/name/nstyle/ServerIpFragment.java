@@ -36,11 +36,11 @@ public class ServerIpFragment extends Fragment {
         ipEdit = (EditText) rootView.findViewById(R.id.ipInput);
         adminIpEdit = (EditText) rootView.findViewById(R.id.adminIpInput);
 
-        String ip = getStoredServerIp(getActivity());
+        String ip = AdminActivity.getGpuServerAddress();//getStoredServerIp(getActivity());
         if (ip != null)
             ipEdit.setText(ip);
 
-        String adminIp = getStoredAdminServerIp(getActivity());
+        String adminIp = AdminActivity.getGpuServerAdminAddress();//getStoredAdminServerIp(getActivity());
         if (adminIp != null)
             adminIpEdit.setText(adminIp);
 
