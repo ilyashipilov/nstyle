@@ -27,7 +27,10 @@ public interface AdminApi {
     Call<LearningStatusInfo> startLearning(@Part MultipartBody.Part sampleImage,
                                            @Part MultipartBody.Part styleImage,
                                            @Query("name") String name,
-                                           @Query("numIterations") int hash);
+                                           @Query("numIterations") int numIterations);
+    @POST("/admin/resumeLearning")
+    Call<LearningStatusInfo> resumeLearning(@Query("name") String name,
+                                            @Query("numIterations") int numIterations);
 
     @GET("/admin/status")
     Call<LearningStatusInfo> status();

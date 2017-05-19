@@ -10,7 +10,9 @@ import android.os.storage.StorageVolume;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import shipilov.name.nstyle.api.AdminApi;
@@ -42,12 +44,19 @@ public class NstyleApplication extends Application {
     }
 
     public static void initializeApi(String ip, String adminIp) {
+        final OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                .readTimeout(60, TimeUnit.SECONDS)
+                .connectTimeout(60, TimeUnit.SECONDS)
+                .build();
+
         retrofit = new Retrofit.Builder()
                 .baseUrl("http://" + ip + ":8080/")
+                .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         adminRetrofit = new Retrofit.Builder()
                 .baseUrl("http://" + adminIp + ":8080/")
+                .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         serverApi = retrofit.create(ServerApi.class);

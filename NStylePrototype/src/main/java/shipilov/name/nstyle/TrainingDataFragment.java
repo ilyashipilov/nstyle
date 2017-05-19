@@ -1,6 +1,8 @@
 package shipilov.name.nstyle;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
+import android.app.AlertDialog;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.NumberPicker;
 import android.widget.Switch;
 
 import java.util.List;
@@ -26,6 +29,7 @@ public class TrainingDataFragment extends Fragment {
     private TrainingDataFragment.MyFragmentPagerAdapter pagerAdapter;
     private Switch publicSwitch;
     private Button removeButton;
+    private Button resumeTrainButton;
     private ViewPager.OnPageChangeListener onPageChangeListener;
 
     public interface Listener {
@@ -35,6 +39,9 @@ public class TrainingDataFragment extends Fragment {
 
         // удаление неудачного стиля
         void onRemove(String styleId);
+
+        // дообучение
+        void onResumeTraining(String styleId, int numIterations);
     }
 
     public interface DataProvider {
@@ -68,7 +75,35 @@ public class TrainingDataFragment extends Fragment {
 
             }
         });
+        resumeTrainButton = (Button) rootView.findViewById(R.id.resumeLearning);
+        resumeTrainButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(getActivity());
+                LayoutInflater inflater = getActivity().getLayoutInflater();
+                final View dialogView = inflater.inflate(R.layout.iterations_input, null);
+                dialogBuilder.setView(dialogView);
+
+                final NumberPicker edt = (NumberPicker) dialogView.findViewById(R.id.iterationsPicker);
+                StartLearningFragment.initializeIterations(edt);
+
+                dialogBuilder.setTitle("Iterations");
+                dialogBuilder.setMessage("Enter iterations count");
+                dialogBuilder.setPositiveButton("Resume train", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        ((TrainingDataFragment.Listener)getActivity()).onResumeTraining(getStyles().get(pager.getCurrentItem()), StartLearningFragment.getNumIterations(edt));
+                    }
+                });
+                dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        //pass
+                    }
+                });
+                AlertDialog b = dialogBuilder.create();
+                b.show();
+            }
+        });
         publicSwitch = (Switch) rootView.findViewById(R.id.switchPublic);
         publicSwitch.setChecked(((DataProvider)getActivity()).isPublic(getCurrntStyleId()));
         final CompoundButton.OnCheckedChangeListener switchListener = new CompoundButton.OnCheckedChangeListener() {

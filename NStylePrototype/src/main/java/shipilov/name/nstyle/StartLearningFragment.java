@@ -50,17 +50,7 @@ public class StartLearningFragment extends Fragment {
 
         iterationsPicker = (NumberPicker) rootView.findViewById(R.id.iterationsPicker);
 
-        List<String> values = new LinkedList<>();
-
-        for (int i = 100; i<1000; i+=100)
-            values.add(String.valueOf(i));
-
-        for (int i = 1000; i<=40000; i+=1000)
-            values.add(String.valueOf(i));
-
-        iterationsPicker.setMaxValue(values.size());
-        iterationsPicker.setMinValue(1);
-        iterationsPicker.setDisplayedValues(values.toArray(new String[0]));
+        initializeIterations(iterationsPicker);
 
         startButton = (Button) rootView.findViewById(R.id.startButton);
         styleImage = (ImageView) rootView.findViewById(R.id.styleImage);
@@ -75,7 +65,7 @@ public class StartLearningFragment extends Fragment {
                             getActivity().getContentResolver().openInputStream(styleUri),
                             getActivity().getContentResolver().openInputStream(sampleUri),
                             styleName.getText().toString(),
-                            iterationsPicker.getValue() < 10 ? iterationsPicker.getValue() * 100 : (iterationsPicker.getValue()-9) * 1000);
+                            getNumIterations(iterationsPicker));
                 } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -112,7 +102,25 @@ public class StartLearningFragment extends Fragment {
         });
         return rootView;
     }
-    
+
+    public static int getNumIterations(NumberPicker iterationsPicker) {
+        return iterationsPicker.getValue() < 10 ? iterationsPicker.getValue() * 100 : (iterationsPicker.getValue()-9) * 1000;
+    }
+
+    public static void initializeIterations(NumberPicker iterationsPicker) {
+        List<String> values = new LinkedList<>();
+
+        for (int i = 100; i<1000; i+=100)
+            values.add(String.valueOf(i));
+
+        for (int i = 1000; i<=40000; i+=1000)
+            values.add(String.valueOf(i));
+
+        iterationsPicker.setMaxValue(values.size());
+        iterationsPicker.setMinValue(1);
+        iterationsPicker.setDisplayedValues(values.toArray(new String[0]));
+    }
+
     public void pickImage(int action) {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");

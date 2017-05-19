@@ -10,9 +10,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -25,15 +22,6 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 
 import com.soundcloud.android.crop.Crop;
-
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -81,8 +69,6 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     private List<String> styles;
     private List<String> publicStyles;
 
-    private Mat mat;
-
     private File outputFile;
     private static String gpuServerAdminAddress;
 
@@ -91,32 +77,6 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         builder.setMessage(message).setTitle(title);
         AlertDialog dialog = builder.create();
         dialog.show();
-    }
-    private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
-        @Override
-        public void onManagerConnected(int status) {
-            switch (status) {
-                case LoaderCallbackInterface.SUCCESS:
-                {
-                    mat=new Mat();
-                } break;
-                default:
-                {
-                    super.onManagerConnected(status);
-                } break;
-            }
-        }
-    };
-
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-        if (!OpenCVLoader.initDebug()) {
-            OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
-        } else {
-            mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
-        }
     }
 
     @Override
@@ -320,6 +280,23 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
 
     }
 
+    @Override
+    public void onResumeTraining(String styleId, final int numIterations) {
+        Call<LearningStatusInfo> resultCall = NstyleApplication.getAdminApi().resumeLearning(styleId, numIterations);
+
+        resultCall.enqueue(new Callback<LearningStatusInfo>() {
+            @Override
+            public void onResponse(Call<LearningStatusInfo> call, Response<LearningStatusInfo> response) {
+                showDialog("Training resumed (+"+numIterations+")", "You can view progress on learning tab");
+            }
+
+            @Override
+            public void onFailure(Call<LearningStatusInfo> call, Throwable t) {
+                showDialog("Init error", t.getMessage());
+            }
+        });
+    }
+
     private void removeTraining(String styleId) {
         final int indexOf = styles.indexOf(styleId);
         NstyleApplication.getAdminApi().removeResult(styleId).enqueue(new Callback<Void>() {
@@ -419,19 +396,10 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             photo.compress(Bitmap.CompressFormat.PNG, 100, stream);
 
-            Mat src = Imgcodecs.imdecode(new MatOfByte(stream.toByteArray()), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
-            Mat dst = new Mat();
-            Size size = new Size(125, 125); //client icons size
-            Imgproc.resize(src, dst, size, 0, 0, Imgproc.INTER_CUBIC);
-
             try {
-                File tmpFile = File.createTempFile("cropped_resized", ".png", AdminActivity.this.getCacheDir());
-
-                Imgcodecs.imwrite(tmpFile.getAbsolutePath(), dst);
-
                 final String styleId = trainingDataFragment.getCurrntStyleId();
-                RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), tmpFile);
-                MultipartBody.Part body = MultipartBody.Part.createFormData("styleIcon", tmpFile.getName(), requestFile);
+                RequestBody requestFile = RequestBody.create(MediaType.parse("multipart/form-data"), outputFile);
+                MultipartBody.Part body = MultipartBody.Part.createFormData("styleIcon", outputFile.getName(), requestFile);
 
                 NstyleApplication.getApi().placeStyle(body, styleId, styleId, networkUrlAddress(styleId)).enqueue(new Callback<ProcessingResult>() {
                     @Override
@@ -452,7 +420,7 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
 
 
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
 
@@ -493,24 +461,6 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
     private String networkUrlAddress(String styleId) {
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         return "http://" + sharedPref.getString("adminIp", null) + ":8080/styleT7place/" + styleId + ".t7";
-    }
-
-    public static Bitmap getResizedBitmap(Bitmap bitmap, int newWidth, int newHeight) {
-        Bitmap scaledBitmap = Bitmap.createBitmap(newWidth, newHeight, Bitmap.Config.ARGB_8888);
-
-        float scaleX = newWidth / (float) bitmap.getWidth();
-        float scaleY = newHeight / (float) bitmap.getHeight();
-        float pivotX = 0;
-        float pivotY = 0;
-
-        Matrix scaleMatrix = new Matrix();
-        scaleMatrix.setScale(scaleX, scaleY, pivotX, pivotY);
-
-        Canvas canvas = new Canvas(scaledBitmap);
-        canvas.setMatrix(scaleMatrix);
-        canvas.drawBitmap(bitmap, 0, 0, new Paint(Paint.FILTER_BITMAP_FLAG));
-
-        return scaledBitmap;
     }
 
     public static String getGpuServerAddress() {
