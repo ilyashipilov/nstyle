@@ -287,7 +287,7 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         resultCall.enqueue(new Callback<LearningStatusInfo>() {
             @Override
             public void onResponse(Call<LearningStatusInfo> call, Response<LearningStatusInfo> response) {
-                showDialog("Training resumed (+"+numIterations+")", "You can view progress on learning tab");
+                showDialog("Training resumed (+"+numIterations+")", "You can view progress on training tab");
             }
 
             @Override

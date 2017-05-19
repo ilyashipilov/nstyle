@@ -88,8 +88,8 @@ public class TrainingDataFragment extends Fragment {
                 final NumberPicker edt = (NumberPicker) dialogView.findViewById(R.id.iterationsPicker);
                 StartLearningFragment.initializeIterations(edt);
 
-                dialogBuilder.setTitle("Iterations");
-                dialogBuilder.setMessage("Enter iterations count");
+                dialogBuilder.setTitle("Additional iterations");
+                dialogBuilder.setMessage("");
                 dialogBuilder.setPositiveButton("Resume train", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         ((TrainingDataFragment.Listener)getActivity()).onResumeTraining(getStyles().get(pager.getCurrentItem()), StartLearningFragment.getNumIterations(edt));
