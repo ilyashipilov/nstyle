@@ -32,6 +32,10 @@ public interface AdminApi {
     Call<LearningStatusInfo> resumeLearning(@Query("name") String name,
                                             @Query("numIterations") int numIterations);
 
+    @POST("/admin/cancelLearning")
+    Call<Void> cancelLearning();
+
+
     @GET("/admin/status")
     Call<LearningStatusInfo> status();
 

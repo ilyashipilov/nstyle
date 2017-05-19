@@ -55,7 +55,12 @@ import shipilov.name.nstyle.api.Settings;
  * Created by HOME on 17.04.2017.
  */
 
-public class AdminActivity extends AppCompatActivity implements StartLearningFragment.OnStartLearning, ServerIpFragment.OnConnectListener, TrainingDataFragment.DataProvider, TrainingDataFragment.Listener, MenuFragment.Listener {
+public class AdminActivity extends AppCompatActivity implements StartLearningFragment.OnStartLearning,
+        ServerIpFragment.OnConnectListener,
+        TrainingDataFragment.DataProvider,
+        TrainingDataFragment.Listener,
+        MenuFragment.Listener,
+        LearningScreenFragment.OnCancelLearning {
 
     private LearningScreenFragment learningScreen;
     private StartLearningFragment startLearning;
@@ -313,6 +318,23 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
         });
     }
 
+    @Override
+    public void onCancel() {
+        Call<Void> resultCall = NstyleApplication.getAdminApi().cancelLearning();
+
+        resultCall.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                showDialog("Training was cancelled", "");
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                showDialog("Cancel training error", t.getMessage());
+            }
+        });
+    }
+
     class StatusSyncTask extends TimerTask {
 
         @Override
@@ -334,7 +356,7 @@ public class AdminActivity extends AppCompatActivity implements StartLearningFra
                             @Override
                             public void run() {
                                 getSupportFragmentManager().beginTransaction()
-                                        .replace(R.id.main_ui_container, startLearning, "startLearning")
+                                        .replace(R.id.main_ui_container, menuFragment, "menuFragment")
                                         .commit();
                             }
                         });

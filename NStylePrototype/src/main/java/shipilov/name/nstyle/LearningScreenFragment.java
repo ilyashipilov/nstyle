@@ -10,12 +10,18 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.InputStream;
+
 import shipilov.name.nstyle.api.LearningStatusInfo;
 
 /**
  * Created by HOME on 18.04.2017.
  */
 public class LearningScreenFragment extends Fragment {
+
+    public interface OnCancelLearning {
+        void onCancel();
+    }
 
     private ProgressBar progressBar;
     private TextView progressLabel;
@@ -39,7 +45,7 @@ public class LearningScreenFragment extends Fragment {
         cancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO
+                ((OnCancelLearning)getActivity()).onCancel();
             }
         });
 
